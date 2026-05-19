@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>食事代記録＆期間集計アプリ</title>
+  
+  <!-- 【NEW】iPhoneのホーム画面用アイコン画像の設定（お洒落なスプーン＆フォーク画像を指定） -->
+  <link rel="apple-touch-icon" href="https://img.icons8.com/color/512/cutlery.png">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Tailwind config for layout utilities -->
   <script>
@@ -746,7 +750,6 @@
       }, 350);
     }
 
-    // 復元キャンセル
     function closeRestoreModal() {
       const modal = document.getElementById('restoreModal');
       modal.querySelector('div').classList.add('scale-95');
