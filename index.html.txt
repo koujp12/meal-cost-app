@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>食事代記録＆期間集計アプリ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind config for layout utilities -->
+  <script>
+    tailwind.config = {
+      darkMode: 'media',
+      theme: {
+        extend: {
+          colors: {
+            ios: {
+              bgLight: '#F2F2F7',      // iOS Grouped Background Light
+              bgDark: '#0B0F19',       // Deep Premium Midnight Navy
+              cardLight: '#FFFFFF',
+              cardDark: '#161C2E',     // Soft Deep Indigo for card elements
+              borderLight: '#E5E5EA',
+              borderDark: '#242C42',   // Sharp contrasting border for dark mode
+              textLight: '#1C1C1E',
+              textDark: '#F2F2F7',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Lucide Icons for high-end iconography -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- html2canvas for capturing DOM as image -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <!-- 絶対に壊れないカラーテーマ設計（静的マルチテーマ変数） -->
+  <style>
+    /* 1. ミントエメラルド */
+    .theme-emerald {
+      --theme-primary: #10b981;
+      --theme-primary-dark: #059669;
+      --theme-primary-light: rgba(16, 185, 129, 0.08);
+      --theme-primary-light-solid: #ecfdf5;
+      --theme-primary-text: #047857;
+      --theme-primary-ring: rgba(16, 185, 129, 0.15);
+      --theme-calc-grad-start: #f0fdf4;
+      --theme-calc-grad-end: #f0fdf9;
+      --theme-calc-border: #d1fae5;
+    }
+    @media (prefers-color-scheme: dark) {
+      .theme-emerald {
+        --theme-calc-grad-start: #112B23;
+        --theme-calc-grad-end: #081511;
+        --theme-calc-border: rgba(33, 79, 66, 0.45);
+      }
+    }
+
+    /* 2. クラシックインディゴ */
+    .theme-indigo {
+      --theme-primary: #6366f1;
+      --theme-primary-dark: #4f46e5;
+      --theme-primary-light: rgba(99, 102, 241, 0.08);
+      --theme-primary-light-solid: #e0e7ff;
+      --theme-primary-text: #3730a3;
+      --theme-primary-ring: rgba(99, 102, 241, 0.15);
+      --theme-calc-grad-start: #eef2ff;
+      --theme-calc-grad-end: #f5f3ff;
+      --theme-calc-border: #e0e7ff;
+    }
+    @media (prefers-color-scheme: dark) {
+      .theme-indigo {
+        --theme-calc-grad-start: #1b1e36;
+        --theme-calc-grad-end: #0f111f;
+        --theme-calc-border: rgba(45, 50, 90, 0.45);
+      }
+    }
+
+    /* 3. サクラローズ（上品なくすみサクラ） */
+    .theme-sakura {
+      --theme-primary: #db8194;
+      --theme-primary-dark: #c46277;
+      --theme-primary-light: rgba(219, 129, 148, 0.08);
+      --theme-primary-light-solid: #fff0f2;
+      --theme-primary-text: #8f3d4f;
+      --theme-primary-ring: rgba(219, 129, 148, 0.15);
+      --theme-calc-grad-start: #fff5f6;
+      --theme-calc-grad-end: #fff0f2;
+      --theme-calc-border: #ffd1d9;
+    }
+    @media (prefers-color-scheme: dark) {
+      .theme-sakura {
+        --theme-calc-grad-start: #2c1217;
+        --theme-calc-grad-end: #140508;
+        --theme-calc-border: rgba(143, 61, 79, 0.45);
+      }
+    }
+
+    /* 4. ウォームオレンジ */
+    .theme-orange {
+      --theme-primary: #f97316;
+      --theme-primary-dark: #ea580c;
+      --theme-primary-light: rgba(249, 115, 22, 0.08);
+      --theme-primary-light-solid: #fff7ed;
+      --theme-primary-text: #9a3412;
+      --theme-primary-ring: rgba(249, 115, 22, 0.15);
+      --theme-calc-grad-start: #fff7ed;
+      --theme-calc-grad-end: #fffbeb;
+      --theme-calc-border: #ffedd5;
+    }
+    @media (prefers-color-scheme: dark) {
+      .theme-orange {
+        --theme-calc-grad-start: #361c12;
+        --theme-calc-grad-end: #1f0f0a;
+        --theme-calc-border: rgba(90, 40, 25, 0.45);
+      }
+    }
+
+    /* 5. スマートモノトーン */
+    .theme-monotone {
+      --theme-primary: #64748b;
+      --theme-primary-dark: #475569;
+      --theme-primary-light: rgba(100, 116, 139, 0.08);
+      --theme-primary-light-solid: #f8fafc;
+      --theme-primary-text: #1e293b;
+      --theme-primary-ring: rgba(100, 116, 139, 0.15);
+      --theme-calc-grad-start: #f8fafc;
+      --theme-calc-grad-end: #f1f5f9;
+      --theme-calc-border: #e2e8f0;
+    }
+    @media (prefers-color-scheme: dark) {
+      .theme-monotone {
+        --theme-calc-grad-start: #1e293b;
+        --theme-calc-grad-end: #0f172a;
+        --theme-calc-border: rgba(71, 85, 105, 0.45);
+      }
+    }
+
+    /* テーマ適用クラス（Tailwindの競合に必ず勝つため !important で保証） */
+    .bg-theme-primary { background-color: var(--theme-primary) !important; }
+    .bg-theme-primary:hover, .bg-theme-primary:active { background-color: var(--theme-primary-dark) !important; }
+    .bg-theme-primary-light { background-color: var(--theme-primary-light) !important; }
+    .text-theme-primary { color: var(--theme-primary) !important; }
+    .text-theme-primary-text { color: var(--theme-primary-text) !important; }
+    .border-theme-primary { border-color: var(--theme-primary) !important; }
+    
+    .focus-ring-theme:focus {
+      outline: none;
+      border-color: var(--theme-primary) !important;
+      box-shadow: 0 0 0 4px var(--theme-primary-ring) !important;
+    }
+
+    /* 前回計算カードの完全静的グラデーション切り替え */
+    .theme-calc-card {
+      background: linear-gradient(to bottom right, var(--theme-calc-grad-start), var(--theme-calc-grad-end)) !important;
+      border-color: var(--theme-calc-border) !important;
+    }
+
+    /* iOS Safari width & native element normalization (はみ出し対策を徹底強化) */
+    input[type="date"], input[type="number"], select, input[type="text"] {
+      -webkit-appearance: none;
+      appearance: none;
+      min-width: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+    }
+
+    /* iOS Safariの日付入力欄内のテキスト配置・パディングバグを強制リセット */
+    ::-webkit-date-and-time-value {
+      margin: 0 !important;
+      padding: 0 !important;
+      min-height: 1.5em;
+      text-align: center; /* 日付を中央揃えにしてコンパクト化 */
+    }
+
+    /* UI調整用 */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #C7C7CC; border-radius: 99px; }
+    .dark ::-webkit-scrollbar-thumb { background: #3A3A3C; }
+  </style>
+</head>
+<body class="theme-emerald bg-ios-bgLight text-slate-800 dark:bg-ios-bgDark dark:text-ios-textDark min-h-screen font-sans flex flex-col antialiased pb-safe">
+
+  <div class="max-w-md mx-auto w-full p-4 sm:p-6 flex-grow flex flex-col justify-between">
+    <div>
+      <!-- ヘッダー (右上にモダンな設定用歯車アイコンを配置) -->
+      <header class="mb-5 text-center pt-2 relative">
+        <div class="inline-flex items-center justify-center bg-theme-primary-light p-2.5 rounded-2xl mb-2">
+          <span class="text-3xl leading-none">🍴</span>
+        </div>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+          食事代カウンター
+        </h1>
+        <p class="text-[11px] font-medium text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-wider">毎日の食事代を記録・集計できる便利ツール</p>
+
+        <!-- 設定起動用 歯車ボタン -->
+        <button onclick="openSettingsModal()" class="absolute right-1 top-2 p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-2xl hover:bg-slate-200/50 dark:hover:bg-slate-800/60 transition-all ios-btn-active" aria-label="設定">
+          <i data-lucide="settings" class="w-5.5 h-5.5"></i>
+        </button>
+      </header>
+
+      <!-- タブメニュー (超スッキリ3タブ構成) -->
+      <div class="flex border border-slate-200/60 dark:border-ios-borderDark/80 mb-6 bg-white dark:bg-[#121829] rounded-2xl p-1 shadow-sm">
+        <button id="tabBtn-record" onclick="switchTab('record')" class="flex-1 py-2.5 px-1 text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-theme-primary bg-theme-primary-light ios-btn-active shadow-sm">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          記録する
+        </button>
+        <button id="tabBtn-history" onclick="switchTab('history')" class="flex-1 py-2.5 px-1 text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 ios-btn-active">
+          <i data-lucide="list" class="w-4 h-4"></i>
+          最近の記録
+        </button>
+        <button id="tabBtn-calc" onclick="switchTab('calc')" class="flex-1 py-2.5 px-1 text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 ios-btn-active">
+          <i data-lucide="calculator" class="w-4 h-4"></i>
+          集計・履歴
+        </button>
+      </div>
+
+      <!-- 1. 記録する タブ -->
+      <div id="pane-record" class="tab-pane fade-in space-y-4">
+        <!-- 入力フォームカード (モバイルでの余白を最適化してはみ出しを防止) -->
+        <div class="bg-ios-cardLight dark:bg-ios-cardDark p-4 sm:p-5 rounded-3xl shadow-md border border-slate-100 dark:border-ios-borderDark/45">
+          <h2 class="text-base font-extrabold mb-4 flex items-center gap-2 text-slate-900 dark:text-white">
+            <span class="p-1 bg-theme-primary-light rounded-lg text-theme-primary">
+              <i data-lucide="pencil" class="w-4 h-4"></i>
+            </span>
+            食事代を入力
+          </h2>
+          <form id="mealForm" class="space-y-4">
+            <div class="min-w-0">
+              <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-1.5">日付</label>
+              <input type="date" id="mealDate" required class="w-full min-w-0 px-2.5 sm:px-3.5 py-3 border border-slate-200/80 dark:border-ios-borderDark bg-slate-50 dark:bg-[#0E1322] rounded-2xl focus-ring-theme text-base dark:text-white block font-medium">
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+              <div class="min-w-0">
+                <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-1.5">金額 (円)</label>
+                <input type="number" id="mealAmount" min="0" placeholder="500" required class="w-full min-w-0 px-2.5 sm:px-3.5 py-3 border border-slate-200/80 dark:border-ios-borderDark bg-slate-50 dark:bg-[#0E1322] rounded-2xl focus-ring-theme text-base dark:text-white font-bold">
+              </div>
+              <div class="min-w-0">
+                <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-1.5">区分</label>
+                <div class="relative">
+                  <select id="mealMemo" class="w-full min-w-0 pl-2.5 pr-8 sm:pl-3.5 sm:pr-10 py-3 border border-slate-200/80 dark:border-ios-borderDark bg-slate-50 dark:bg-[#0E1322] rounded-2xl focus-ring-theme text-base dark:text-white font-bold">
+                    <option value="昼食">昼食 🍱</option>
+                    <option value="夕食">夕食 🍽️</option>
+                    <option value="朝食">朝食 🍞</option>
+                    <option value="間食・カフェ">間食 ☕</option>
+                    <option value="自炊買い出し">買い出し 🛒</option>
+                    <option value="その他">その他 ❓</option>
+                  </select>
+                  <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400">
+                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 「その他」用メモ入力欄 -->
+            <div id="otherMemoContainer" class="hidden transition-all duration-200 fade-in min-w-0">
+              <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-1.5">その他の詳細メモ（短文）</label>
+              <input type="text" id="otherMemoText" placeholder="例: カフェで勉強、スーパーでお惣菜" class="w-full min-w-0 px-2.5 sm:px-3.5 py-3 border border-slate-200/80 dark:border-ios-borderDark bg-slate-50 dark:bg-[#0E1322] rounded-2xl focus-ring-theme text-base dark:text-white font-medium">
+            </div>
+
+            <div class="pt-2">
+              <button type="submit" class="w-full bg-theme-primary text-white font-bold py-3.5 px-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md text-sm ios-btn-active">
+                <i data-lucide="save" class="w-4.5 h-4.5"></i>
+                この食事を保存する
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- 2. 最近の記録 タブ -->
+      <div id="pane-history" class="tab-pane fade-in space-y-4 hidden">
+        <div class="bg-ios-cardLight dark:bg-ios-cardDark p-4 sm:p-5 rounded-3xl shadow-md border border-slate-100 dark:border-ios-borderDark/45">
+          <h2 class="text-base font-extrabold flex items-center gap-2 text-slate-900 dark:text-white mb-4">
+            <span class="p-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-300">
+              <i data-lucide="calendar-days" class="w-4 h-4"></i>
+            </span>
+            記録履歴（最大15件）
+          </h2>
+          <div id="mealList" class="space-y-2.5 max-h-[440px] overflow-y-auto pr-0.5">
+            <!-- JavaScriptで挿入 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. 集計・履歴 タブ -->
+      <div id="pane-calc" class="tab-pane fade-in space-y-4 hidden">
+        
+        <!-- 前回計算した範囲 (テーマ連動型ソフトグラデーションカード) -->
+        <div id="lastCalcWrapper" class="theme-calc-card p-5 rounded-3xl shadow-md relative overflow-hidden border">
+          <!-- バックデザイン用の光る円 -->
+          <div class="absolute -right-12 -bottom-12 w-32 h-32 bg-theme-primary-light rounded-full blur-2xl opacity-40"></div>
+          <h2 class="text-[10px] font-extrabold text-theme-primary-text dark:text-theme-primary tracking-wider uppercase mb-3 flex items-center gap-1.5">
+            <i data-lucide="history" class="w-3.5 h-3.5"></i>
+            前回計算した範囲と合計
+          </h2>
+          <div id="lastCalcContainer" class="space-y-2">
+            <!-- JavaScriptで挿入 -->
+          </div>
+        </div>
+
+        <!-- 範囲指定計算フォーム (モバイルでの余白を最適化してはみ出しを完全解消) -->
+        <div class="bg-ios-cardLight dark:bg-ios-cardDark p-4 sm:p-5 rounded-3xl shadow-md border border-slate-100 dark:border-ios-borderDark/45">
+          <h2 class="text-base font-extrabold mb-4 flex items-center gap-2 text-slate-900 dark:text-white">
+            <span class="p-1 bg-theme-primary-light rounded-lg text-theme-primary">
+              <i data-lucide="calculator" class="w-4 h-4"></i>
+            </span>
+            期間を指定して計算
+          </h2>
+          <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-3 min-w-0">
+              <div class="min-w-0">
+                <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-1.5">開始日</label>
+                <input type="date" id="calcStart" class="w-full min-w-0 px-2 sm:px-3 py-3 border border-slate-200/80 dark:border-ios-borderDark bg-slate-50 dark:bg-[#0E1322] rounded-2xl focus-ring-theme text-base dark:text-white block font-medium">
+              </div>
+              <div class="min-w-0">
+                <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-1.5">終了日</label>
+                <input type="date" id="calcEnd" class="w-full min-w-0 px-2 sm:px-3 py-3 border border-slate-200/80 dark:border-ios-borderDark bg-slate-50 dark:bg-[#0E1322] rounded-2xl focus-ring-theme text-base dark:text-white block font-medium">
+              </div>
+            </div>
+            
+            <div class="flex gap-2.5">
+              <button id="quickWeekBtn" class="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-[#1C243B] dark:hover:bg-[#25304E] text-slate-700 dark:text-slate-200 text-xs font-bold py-2.5 px-3 rounded-xl transition-all ios-btn-active border border-slate-200/20">
+                直近1週間
+              </button>
+              <button id="quickMonthBtn" class="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-[#1C243B] dark:hover:bg-[#25304E] text-slate-700 dark:text-slate-200 text-xs font-bold py-2.5 px-3 rounded-xl transition-all ios-btn-active border border-slate-200/20">
+                今月
+              </button>
+            </div>
+
+            <div class="pt-2">
+              <button id="calculateBtn" class="w-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-[#0B0F19] dark:hover:bg-slate-100 text-white font-bold py-3.5 px-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-sm text-sm ios-btn-active">
+                <i data-lucide="arrow-right-left" class="w-4 h-4"></i>
+                合計金額を算出する
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 今回の計算結果 (テーマカラーに優しく呼応) -->
+        <div id="resultCard" class="bg-slate-50 border border-slate-200/80 dark:bg-ios-cardDark dark:border-ios-borderDark p-4 sm:p-5 rounded-3xl shadow-md hidden fade-in space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-200/60 dark:border-ios-borderDark/60 pb-2">
+            <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400">今回の計算結果</h3>
+            <button onclick="downloadReportImage()" class="bg-theme-primary text-white text-xs font-bold py-1.5 px-3 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm ios-btn-active">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              画像で保存
+            </button>
+          </div>
+          
+          <div class="flex justify-between items-baseline">
+            <span class="text-xs text-slate-400 dark:text-slate-500 font-bold" id="resultRange">----/--/-- 〜 ----/--/--</span>
+            <span class="text-2xl font-extrabold text-theme-primary" id="resultAmount">¥0</span>
+          </div>
+          <p class="text-xs text-slate-400 dark:text-slate-500 font-bold" id="resultCount">対象データ: 0件</p>
+
+          <!-- 画像化する用のレシート風デザインエリア -->
+          <div class="border border-dashed border-slate-300 rounded-2xl bg-white p-5 shadow-sm overflow-hidden" id="reportPaper">
+            <div class="text-center border-b border-slate-100 pb-3 mb-4">
+              <div class="inline-flex items-center justify-center p-2 rounded-full mb-1.5 bg-theme-primary-light-solid" id="receiptLogoBg">
+                <span class="text-2xl leading-none">🍴</span>
+              </div>
+              <h4 class="text-sm font-black text-slate-850 tracking-tight">食事代集計レポート</h4>
+              <p class="text-[9px] text-slate-400 font-medium" id="reportDate">作成日: ----/--/--</p>
+            </div>
+            
+            <div class="bg-slate-50/70 rounded-xl p-3 mb-4 text-xs space-y-1.5">
+              <div class="flex justify-between text-slate-500 text-[10px] font-bold">
+                <span>集計対象期間</span>
+                <span id="reportRangeText" class="text-slate-700">----/--/-- 〜 ----/--/--</span>
+              </div>
+              <div class="flex justify-between items-baseline pt-1.5 border-t border-slate-200/40">
+                <span class="text-[10px] text-slate-500 font-bold">合計金額 (件数)</span>
+                <span class="text-sm font-extrabold text-slate-800" id="reportTotalText">¥0 (0件)</span>
+              </div>
+            </div>
+
+            <!-- 食事明細一覧 -->
+            <div class="space-y-1.5" id="reportItemsContainer">
+              <div class="text-[10px] font-extrabold text-slate-400 border-b border-slate-100 pb-1.5 flex justify-between">
+                <span>日付・区分</span>
+                <span>金額</span>
+              </div>
+              <div id="reportItems" class="space-y-2 text-xs max-h-60 overflow-y-auto pr-0.5">
+                <!-- JSで動的に追加 -->
+              </div>
+            </div>
+            
+            <div class="border-t border-dashed border-slate-200 mt-5 pt-3 text-center">
+              <p class="text-[9px] text-slate-400 font-bold">食事代カウンターで作成</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- iOS風ボトム設定シート -->
+  <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end justify-center hidden opacity-0 transition-opacity duration-300" onclick="closeSettingsModalOnOutside(event)">
+    <div id="settingsSheet" class="bg-white dark:bg-ios-cardDark rounded-t-[32px] p-6 w-full max-w-md shadow-2xl transform translate-y-full transition-transform duration-300 border-t border-slate-100 dark:border-ios-borderDark">
+      <!-- iOSインジケータバー -->
+      <div class="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-5 cursor-pointer" onclick="closeSettingsModal()"></div>
+      
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+          <i data-lucide="settings" class="text-theme-primary w-5 h-5"></i>
+          アプリ設定
+        </h3>
+        <button onclick="closeSettingsModal()" class="text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800 py-1.5 px-3 rounded-xl ios-btn-active">
+          閉じる
+        </button>
+      </div>
+
+      <div class="space-y-5 max-h-[65vh] overflow-y-auto pb-6 pr-0.5">
+        
+        <!-- カラーテーマ変更 -->
+        <div class="bg-slate-50 dark:bg-[#121829] p-4 rounded-2xl border border-slate-200/40 dark:border-ios-borderDark/45">
+          <h4 class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="palette" class="w-3.5 h-3.5"></i>
+            テーマカラー変更
+          </h4>
+          <div class="grid grid-cols-2 gap-2.5">
+            <button onclick="applyTheme('emerald')" class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200/80 dark:border-ios-borderDark bg-white dark:bg-ios-cardDark ios-btn-active text-xs font-bold text-slate-800 dark:text-slate-200">
+              <span class="w-4 h-4 rounded-full bg-[#10b981] inline-block shrink-0 shadow-inner"></span>
+              ミントエメラルド
+            </button>
+            <button onclick="applyTheme('indigo')" class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200/80 dark:border-ios-borderDark bg-white dark:bg-ios-cardDark ios-btn-active text-xs font-bold text-slate-800 dark:text-slate-200">
+              <span class="w-4 h-4 rounded-full bg-[#6366f1] inline-block shrink-0 shadow-inner"></span>
+              クラシックインディゴ
+            </button>
+            <button onclick="applyTheme('sakura')" class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200/80 dark:border-ios-borderDark bg-white dark:bg-ios-cardDark ios-btn-active text-xs font-bold text-slate-800 dark:text-slate-200">
+              <span class="w-4 h-4 rounded-full bg-[#db8194] inline-block shrink-0 shadow-inner"></span>
+              サクラローズ
+            </button>
+            <button onclick="applyTheme('orange')" class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200/80 dark:border-ios-borderDark bg-white dark:bg-ios-cardDark ios-btn-active text-xs font-bold text-slate-800 dark:text-slate-200">
+              <span class="w-4 h-4 rounded-full bg-[#f97316] inline-block shrink-0 shadow-inner"></span>
+              ウォームオレンジ
+            </button>
+            <button onclick="applyTheme('monotone')" class="col-span-2 flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200/80 dark:border-ios-borderDark bg-white dark:bg-ios-cardDark ios-btn-active text-xs font-bold text-slate-800 dark:text-slate-200">
+              <span class="w-4 h-4 rounded-full bg-[#64748b] inline-block shrink-0 shadow-inner"></span>
+              スマートモノトーン
+            </button>
+          </div>
+        </div>
+
+        <!-- バックアップと復元 -->
+        <div class="bg-slate-50 dark:bg-[#121829] p-4 rounded-2xl border border-slate-200/40 dark:border-ios-borderDark/45">
+          <h4 class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="database" class="w-3.5 h-3.5"></i>
+            バックアップと復元
+          </h4>
+          <p class="text-[10px] text-slate-400 dark:text-slate-500 mb-3 leading-relaxed font-medium">
+            クリップボードを介して、食事データをバックアップ・移行できます。
+          </p>
+          <div class="grid grid-cols-2 gap-2.5">
+            <button onclick="backupData()" class="bg-white hover:bg-slate-100 dark:bg-ios-cardDark dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold py-2.5 px-3 rounded-xl transition-colors text-xs flex items-center justify-center gap-1.5 ios-btn-active border border-slate-200/40 dark:border-ios-borderDark">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              コピーする
+            </button>
+            <button onclick="openRestoreModal()" class="bg-theme-primary-light text-theme-primary-text dark:text-theme-primary font-bold py-2.5 px-3 rounded-xl transition-colors text-xs flex items-center justify-center gap-1.5 ios-btn-active">
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+              復元を実行
+            </button>
+          </div>
+        </div>
+
+        <!-- データの一括初期化 -->
+        <div class="bg-slate-50 dark:bg-[#121829] p-4 rounded-2xl border border-slate-200/40 dark:border-ios-borderDark/45">
+          <h4 class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+            データ初期化
+          </h4>
+          <p class="text-[10px] text-slate-400 dark:text-slate-500 mb-3 leading-relaxed font-medium">
+            これまでに蓄積されたすべての食事記録データを完全に消去します。
+          </p>
+          <button onclick="openConfirmModal()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm text-xs ios-btn-active shadow-red-500/5">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            データをすべてクリア
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- トースト通知 -->
+  <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 bg-slate-900/95 dark:bg-white/95 text-white dark:text-slate-900 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs font-bold z-50 transition-all duration-300 -translate-y-20 opacity-0 pointer-events-none backdrop-blur-sm">
+    <i id="toastIcon" data-lucide="check-circle" class="w-4.5 h-4.5 text-theme-primary"></i>
+    <span id="toastMessage">メッセージ</span>
+  </div>
+
+  <!-- カスタム一括削除モーダル -->
+  <div id="confirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white dark:bg-ios-cardDark rounded-3xl p-6 max-w-xs w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-200 border border-slate-100 dark:border-ios-borderDark">
+      <h3 class="text-base font-extrabold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+        <span class="text-xl">⚠️</span>
+        すべて消去しますか？
+      </h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-5 leading-relaxed font-medium">
+        これまでに登録した全ての食事履歴が削除されます。この動作は取り消せません。
+      </p>
+      <div class="flex gap-2.5 justify-end">
+        <button onclick="closeConfirmModal()" class="flex-1 px-3 py-3 text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-[#1C243B] hover:bg-slate-200 dark:hover:bg-[#25304E] rounded-xl transition-all ios-btn-active">
+          キャンセル
+        </button>
+        <button id="executeDeleteBtn" onclick="executeClearAll()" class="flex-1 px-3 py-3 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all ios-btn-active shadow-sm shadow-red-500/10">
+          削除する
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- データ復元用コード貼り付けモーダル -->
+  <div id="restoreModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white dark:bg-ios-cardDark rounded-3xl p-6 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-200 border border-slate-100 dark:border-ios-borderDark">
+      <h3 class="text-base font-extrabold text-slate-900 dark:text-white mb-2 flex items-center gap-1.5">
+        <span class="p-1 bg-theme-primary-light rounded-lg text-theme-primary">
+          <i data-lucide="upload" class="w-4 h-4"></i>
+        </span>
+        バックアップから復元
+      </h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed font-medium">
+        以前コピーしたバックアップコードを以下に貼り付けてください。
+      </p>
+      <textarea id="restoreCodeInput" rows="5" placeholder="ここにバックアップコードをペーストしてください..." class="w-full p-3.5 border border-slate-200 dark:border-ios-borderDark bg-slate-50 dark:bg-[#0E1322] rounded-2xl text-xs font-mono focus:outline-none focus:ring-4 focus:ring-orange-500/15 mb-4 dark:text-white"></textarea>
+      <div class="flex gap-2.5 justify-end">
+        <button onclick="closeRestoreModal()" class="flex-1 px-3 py-3 text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-[#1C243B] hover:bg-slate-200 dark:hover:bg-[#25304E] rounded-xl transition-all ios-btn-active">
+          キャンセル
+        </button>
+        <button onclick="executeRestore()" class="flex-1 px-3 py-3 text-xs font-bold text-white bg-theme-primary hover:bg-theme-primary-dark rounded-xl transition-all ios-btn-active shadow-sm">
+          復元を実行
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 画像保存フォールバック用プレビューモーダル -->
+  <div id="imageSaveModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white dark:bg-ios-cardDark rounded-3xl p-5 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-200 border border-slate-100 dark:border-ios-borderDark text-center">
+      <h3 class="text-base font-extrabold text-slate-900 dark:text-white mb-1.5 flex items-center justify-center gap-1.5">
+        <span class="text-xl">📸</span>
+        画像を長押しして「写真」に保存
+      </h3>
+      <p class="text-[11px] text-slate-400 dark:text-slate-400 mb-4 leading-relaxed font-medium">
+        iOSのシステム保護対策のため、表示されたレシート画像を<strong>「長押し」</strong>して写真ライブラリに保存してください。
+      </p>
+      
+      <!-- 生成された画像をここへ挿入 -->
+      <div class="border border-slate-200/60 dark:border-ios-borderDark rounded-2xl overflow-hidden max-h-[350px] overflow-y-auto mb-4 bg-slate-50 dark:bg-slate-950 p-2">
+        <img id="generatedReportImg" class="w-full h-auto mx-auto shadow-md rounded-xl" src="" alt="レポート画像">
+      </div>
+
+      <button onclick="closeImageSaveModal()" class="w-full py-3 text-xs font-bold text-white bg-theme-primary hover:bg-theme-primary-dark rounded-xl transition-all shadow-md ios-btn-active">
+        閉じる
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // データの管理
+    let meals = JSON.parse(localStorage.getItem('meals')) || [];
+    let lastCalculation = JSON.parse(localStorage.getItem('lastCalculation')) || null;
+    let currentTheme = localStorage.getItem('currentTheme') || 'emerald';
+    let currentFilteredMeals = []; 
+
+    // DOM要素の取得
+    const mealForm = document.getElementById('mealForm');
+    const mealDateInput = document.getElementById('mealDate');
+    const mealAmountInput = document.getElementById('mealAmount');
+    const mealMemoSelect = document.getElementById('mealMemo');
+    const otherMemoContainer = document.getElementById('otherMemoContainer');
+    const otherMemoTextInput = document.getElementById('otherMemoText');
+    const mealList = document.getElementById('mealList');
+
+    const calcStartInput = document.getElementById('calcStart');
+    const calcEndInput = document.getElementById('calcEnd');
+    const calculateBtn = document.getElementById('calculateBtn');
+    const resultCard = document.getElementById('resultCard');
+    const resultRange = document.getElementById('resultRange');
+    const resultAmount = document.getElementById('resultAmount');
+    const resultCount = document.getElementById('resultCount');
+    const lastCalcContainer = document.getElementById('lastCalcContainer');
+
+    const quickWeekBtn = document.getElementById('quickWeekBtn');
+    const quickMonthBtn = document.getElementById('quickMonthBtn');
+
+    // レシート用DOM要素の取得
+    const reportDate = document.getElementById('reportDate');
+    const reportRangeText = document.getElementById('reportRangeText');
+    const reportTotalText = document.getElementById('reportTotalText');
+    const reportItems = document.getElementById('reportItems');
+
+    // 初期処理: 今日の日付を設定
+    const today = new Date().toISOString().split('T')[0];
+    mealDateInput.value = today;
+
+    // アプリ初期化
+    function init() {
+      applyTheme(currentTheme, false); // 保存されているテーマを最優先でロードしてスタイルシートを注入
+      renderMeals();
+      renderLastCalculation();
+      lucide.createIcons();
+    }
+
+    // テーマ適用処理
+    window.applyTheme = function(themeName, triggerNotice = true) {
+      if (!THEMES[themeName]) return;
+      currentTheme = themeName;
+      localStorage.setItem('currentTheme', themeName); // 保存処理
+
+      // bodyのクラスを一旦すべてクリアして、選択されたクラス単一にする
+      document.body.className = "bg-ios-bgLight text-slate-800 dark:bg-ios-bgDark dark:text-ios-textDark min-h-screen font-sans flex flex-col antialiased pb-safe";
+      document.body.classList.add(`theme-${themeName}`);
+
+      // 現在選択されているタブのアクティブスタイルをリフレッシュ
+      const currentTab = document.querySelector('.tab-pane:not(.hidden)').id.replace('pane-', '');
+      switchTab(currentTab);
+
+      if (triggerNotice) {
+        showToast('カラーテーマを着せ替えました！');
+      }
+    };
+
+    // タブ切り替え (記録する・最近・集計の3タブに対応)
+    function switchTab(tabName) {
+      const tabs = ['record', 'history', 'calc'];
+      
+      tabs.forEach(name => {
+        const pane = document.getElementById(`pane-${name}`);
+        const btn = document.getElementById(`tabBtn-${name}`);
+        
+        if (pane) {
+          if (name === tabName) {
+            pane.classList.remove('hidden');
+            btn.className = "flex-1 py-2.5 px-1 text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-theme-primary bg-theme-primary-light ios-btn-active shadow-sm";
+          } else {
+            pane.classList.add('hidden');
+            btn.className = "flex-1 py-2.5 px-1 text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 ios-btn-active";
+          }
+        }
+      });
+      lucide.createIcons();
+    }
+
+    // 設定モーダルの開閉処理
+    window.openSettingsModal = function() {
+      const modal = document.getElementById('settingsModal');
+      const sheet = document.getElementById('settingsSheet');
+      
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        sheet.classList.remove('translate-y-full');
+      }, 30);
+    };
+
+    window.closeSettingsModal = function() {
+      const modal = document.getElementById('settingsModal');
+      const sheet = document.getElementById('settingsSheet');
+      
+      sheet.classList.add('translate-y-full');
+      modal.classList.add('opacity-0');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 300);
+    };
+
+    window.closeSettingsModalOnOutside = function(event) {
+      const sheet = document.getElementById('settingsSheet');
+      if (!sheet.contains(event.target)) {
+        closeSettingsModal();
+      }
+    };
+
+    // 「その他」が選ばれたときに自由入力メモを開閉する
+    mealMemoSelect.addEventListener('change', (e) => {
+      if (e.target.value === 'その他') {
+        otherMemoContainer.classList.remove('hidden');
+        otherMemoTextInput.focus();
+      } else {
+        otherMemoContainer.classList.add('hidden');
+        otherMemoTextInput.value = ''; 
+      }
+    });
+
+    // カスタムトースト表示
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMsg.textContent = message;
+
+      if (type === 'error') {
+        toastIcon.setAttribute('data-lucide', 'alert-circle');
+        toastIcon.className = 'w-4.5 h-4.5 text-red-500';
+      } else {
+        toastIcon.setAttribute('data-lucide', 'check-circle');
+        toastIcon.className = 'w-4.5 h-4.5 text-theme-primary';
+      }
+      lucide.createIcons();
+
+      toast.classList.remove('-translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.add('-translate-y-20', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 2500);
+    }
+
+    // モーダルオープン/クローズ (削除確認)
+    function openConfirmModal() {
+      const modal = document.getElementById('confirmModal');
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.querySelector('div').classList.remove('scale-95');
+      }, 50);
+    }
+
+    function closeConfirmModal() {
+      const modal = document.getElementById('confirmModal');
+      modal.querySelector('div').classList.add('scale-95');
+      modal.classList.add('opacity-0');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 200);
+    }
+
+    // 復元モーダルオープン/クローズ
+    function openRestoreModal() {
+      closeSettingsModal(); 
+      setTimeout(() => {
+        const modal = document.getElementById('restoreModal');
+        document.getElementById('restoreCodeInput').value = '';
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+          modal.classList.remove('opacity-0');
+          modal.querySelector('div').classList.remove('scale-95');
+        }, 50);
+        lucide.createIcons();
+      }, 350);
+    }
+
+    // 復元キャンセル
+    function closeRestoreModal() {
+      const modal = document.getElementById('restoreModal');
+      modal.querySelector('div').classList.add('scale-95');
+      modal.classList.add('opacity-0');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 200);
+    }
+
+    // 画像保存フォールバックモーダルオープン/クローズ
+    function openImageSaveModal(imageSrc) {
+      const modal = document.getElementById('imageSaveModal');
+      const img = document.getElementById('generatedReportImg');
+      img.src = imageSrc;
+      
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.querySelector('div').classList.remove('scale-95');
+      }, 50);
+    }
+
+    function closeImageSaveModal() {
+      const modal = document.getElementById('imageSaveModal');
+      modal.querySelector('div').classList.add('scale-95');
+      modal.classList.add('opacity-0');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 200);
+    }
+
+    // データのバックアップコピー機能
+    window.backupData = function() {
+      if (meals.length === 0 && !lastCalculation) {
+        showToast('バックアップするデータがありません', 'error');
+        return;
+      }
+
+      const backupObj = {
+        version: "1.4",
+        theme: currentTheme,
+        meals: meals,
+        lastCalculation: lastCalculation
+      };
+
+      const jsonString = JSON.stringify(backupObj);
+      const encodedData = btoa(encodeURIComponent(jsonString));
+
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(encodedData).then(() => {
+          showToast('コードをコピーしました！');
+        }).catch(err => {
+          legacyCopy(encodedData);
+        });
+      } else {
+        legacyCopy(encodedData);
+      }
+    };
+
+    function legacyCopy(text) {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        showToast('コードをコピーしました！');
+      } catch (err) {
+        showToast('コピーに失敗しました', 'error');
+      }
+      document.body.removeChild(textArea);
+    }
+
+    // バックアップデータの復元機能
+    window.executeRestore = function() {
+      const codeInput = document.getElementById('restoreCodeInput').value.trim();
+
+      if (!codeInput) {
+        showToast('コードを入力してください', 'error');
+        return;
+      }
+
+      try {
+        const decodedString = decodeURIComponent(atob(codeInput));
+        const parsedData = JSON.parse(decodedString);
+
+        if (!parsedData || !Array.isArray(parsedData.meals)) {
+          throw new Error('Invalid data format');
+        }
+
+        meals = parsedData.meals;
+        lastCalculation = parsedData.lastCalculation || null;
+        if (parsedData.theme) {
+          applyTheme(parsedData.theme, false);
+        }
+
+        localStorage.setItem('meals', JSON.stringify(meals));
+        if (lastCalculation) {
+          localStorage.setItem('lastCalculation', JSON.stringify(lastCalculation));
+        } else {
+          localStorage.removeItem('lastCalculation');
+        }
+
+        renderMeals();
+        renderLastCalculation();
+        closeRestoreModal();
+        showToast('データを復元しました！');
+
+      } catch (e) {
+        console.error(e);
+        showToast('正しくないコードです', 'error');
+      }
+    };
+
+    // 食事代の保存
+    mealForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const date = mealDateInput.value;
+      const amount = parseInt(mealAmountInput.value, 10);
+      let memo = mealMemoSelect.value;
+
+      if (!date || isNaN(amount)) return;
+
+      if (memo === 'その他') {
+        const otherText = otherMemoTextInput.value.trim();
+        memo = otherText ? `その他: ${otherText}` : 'その他 ❓';
+      }
+
+      const newMeal = {
+        id: Date.now().toString(),
+        date,
+        amount,
+        memo
+      };
+
+      meals.push(newMeal);
+      meals.sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      saveToStorage();
+      renderMeals();
+      
+      mealAmountInput.value = '';
+      otherMemoTextInput.value = '';
+      mealForm.reset();
+      mealDateInput.value = today;
+      otherMemoContainer.classList.add('hidden');
+
+      showToast('食事代を記録しました！');
+    });
+
+    // 単一データの削除
+    window.deleteMeal = function(id) {
+      meals = meals.filter(meal => meal.id !== id);
+      saveToStorage();
+      renderMeals();
+      showToast('記録を1件削除しました');
+    };
+
+    // 一括削除実行
+    function executeClearAll() {
+      meals = [];
+      lastCalculation = null;
+      localStorage.removeItem('lastCalculation');
+      saveToStorage();
+      renderMeals();
+      renderLastCalculation();
+      closeConfirmModal();
+      closeSettingsModal();
+      showToast('すべての記録をクリアしました');
+    }
+
+    // 計算処理
+    calculateBtn.addEventListener('click', () => {
+      const start = calcStartInput.value;
+      const end = calcEndInput.value;
+
+      if (!start || !end) {
+        showToast('開始日と終了日を選択してください。', 'error');
+        return;
+      }
+
+      if (new Date(start) > new Date(end)) {
+        showToast('開始日は終了日以前の日付にしてください。', 'error');
+        return;
+      }
+
+      currentFilteredMeals = meals.filter(meal => {
+        const d = meal.date;
+        return d >= start && d <= end;
+      });
+
+      const total = currentFilteredMeals.reduce((sum, item) => sum + item.amount, 0);
+
+      resultCard.classList.remove('hidden');
+      resultRange.textContent = `${formatDate(start)} 〜 ${formatDate(end)}`;
+      resultAmount.textContent = `¥${total.toLocaleString()}`;
+      resultCount.textContent = `対象データ: ${currentFilteredMeals.length} 件`;
+
+      renderReportPaper(start, end, total);
+
+      lastCalculation = {
+        start,
+        end,
+        total,
+        count: currentFilteredMeals.length,
+        timestamp: new Date().toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+      };
+
+      localStorage.setItem('lastCalculation', JSON.stringify(lastCalculation));
+      renderLastCalculation();
+      lucide.createIcons();
+      showToast('合計金額を集計しました！');
+    });
+
+    // レシート風プレビューの描画処理
+    function renderReportPaper(start, end, total) {
+      const todayStr = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      reportDate.textContent = `作成日: ${todayStr}`;
+      reportRangeText.textContent = `${start.replace(/-/g, '/')} 〜 ${end.replace(/-/g, '/')}`;
+      reportTotalText.textContent = `¥${total.toLocaleString()} (${currentFilteredMeals.length}件)`;
+
+      if (currentFilteredMeals.length === 0) {
+        reportItems.innerHTML = `<p class="text-center text-slate-400 py-6 text-[10px] font-bold">データがありません</p>`;
+        return;
+      }
+
+      const sortedMeals = [...currentFilteredMeals].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      reportItems.innerHTML = sortedMeals.map(meal => {
+        const [y, m, d] = meal.date.split('-');
+        return `
+          <div class="flex justify-between py-1.5 border-b border-slate-100 text-slate-750">
+            <div class="flex flex-col">
+              <span class="font-extrabold text-[9px] text-slate-400">${m}/${d}</span>
+              <span class="text-xs font-bold text-slate-800">${meal.memo}</span>
+            </div>
+            <span class="font-bold text-slate-800 self-center">¥${meal.amount.toLocaleString()}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 画像保存処理
+    window.downloadReportImage = async function() {
+      if (currentFilteredMeals.length === 0) {
+        showToast('保存するデータがありません', 'error');
+        return;
+      }
+
+      showToast('画像を生成しています...');
+      
+      const target = document.getElementById('reportPaper');
+      
+      try {
+        const canvas = await html2canvas(target, {
+          scale: 3,
+          backgroundColor: '#ffffff',
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          scrollX: 0,
+          scrollY: 0
+        });
+
+        const imageUri = canvas.toDataURL('image/png');
+        
+        const startStr = calcStartInput.value.replace(/-/g, '');
+        const endStr = calcEndInput.value.replace(/-/g, '');
+        const fileName = `meal_report_${startStr}_to_${endStr}.png`;
+
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = imageUri;
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+          document.body.removeChild(link);
+          showToast('画像を生成しました');
+          openImageSaveModal(imageUri);
+        }, 150);
+
+      } catch (error) {
+        console.error('Image generation error:', error);
+        showToast('画像の生成に失敗しました。', 'error');
+      }
+    };
+
+    // クイック範囲設定
+    quickWeekBtn.addEventListener('click', () => {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(end.getDate() - 6);
+      
+      calcStartInput.value = start.toISOString().split('T')[0];
+      calcEndInput.value = end.toISOString().split('T')[0];
+    });
+
+    // 今月範囲
+    quickMonthBtn.addEventListener('click', () => {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      
+      calcStartInput.value = start.toISOString().split('T')[0];
+      calcEndInput.value = end.toISOString().split('T')[0];
+    });
+
+    function saveToStorage() {
+      localStorage.setItem('meals', JSON.stringify(meals));
+    }
+
+    // 履歴リストの描画
+    function renderMeals() {
+      if (meals.length === 0) {
+        mealList.innerHTML = `
+          <p class="text-sm text-slate-400 text-center py-16 dark:text-slate-500 font-medium">
+            データがまだありません。<br>「記録する」タブから追加してください。
+          </p>
+        `;
+        return;
+      }
+
+      const displayMeals = meals.slice(0, 15);
+
+      mealList.innerHTML = displayMeals.map(meal => `
+        <div class="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/70 dark:bg-[#1E253A] dark:hover:bg-[#252E48] rounded-2xl transition-all border border-slate-200/40 dark:border-ios-borderDark/40 fade-in shadow-sm">
+          <div class="flex items-center gap-3">
+            <span class="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 bg-white dark:bg-[#0E1322] border border-slate-200/70 dark:border-ios-borderDark py-1 px-2 rounded-xl shrink-0">
+              ${formatDate(meal.date)}
+            </span>
+            <div class="min-w-0">
+              <p class="text-sm font-black text-slate-850 dark:text-ios-textDark">¥${meal.amount.toLocaleString()}</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500 truncate max-w-[180px] font-bold mt-0.5">${meal.memo}</p>
+            </div>
+          </div>
+          <button onclick="deleteMeal('${meal.id}')" class="text-slate-400 hover:text-red-500 p-2 rounded-xl hover:bg-white dark:hover:bg-[#151C2E] transition-colors shrink-0 ios-btn-active">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      `).join('');
+      
+      lucide.createIcons();
+    }
+
+    // 前回計算情報の描画
+    function renderLastCalculation() {
+      if (!lastCalculation) {
+        lastCalcContainer.innerHTML = `<p class="text-theme-primary-text dark:text-slate-400 text-xs font-bold py-2 opacity-80">過去に計算した履歴はありません</p>`;
+        return;
+      }
+
+      lastCalcContainer.innerHTML = `
+        <div class="space-y-3">
+          <div class="flex items-center justify-between text-[11px] text-theme-primary-text dark:text-slate-400 font-bold">
+            <span>計算実行: ${lastCalculation.timestamp}</span>
+            <span class="bg-white dark:bg-slate-950 text-theme-primary-text dark:text-theme-primary py-0.5 px-2 rounded-full font-extrabold text-[9px] shadow-sm border border-black/5">SAVED</span>
+          </div>
+          <div class="bg-white/60 dark:bg-[#091512]/50 border border-black/5 dark:border-[#214F44]/20 rounded-2xl p-3.5 shadow-sm">
+            <div class="flex justify-between items-center mb-1 gap-1">
+              <span class="text-[11px] text-theme-primary-text dark:text-slate-400 shrink-0 font-bold opacity-80">指定した期間</span>
+              <span class="text-xs font-bold text-slate-850 dark:text-slate-100 truncate font-mono">
+                ${formatDate(lastCalculation.start)} 〜 ${formatDate(lastCalculation.end)}
+              </span>
+            </div>
+            <div class="flex justify-between items-baseline mt-2.5 pt-2.5 border-t border-black/5 dark:border-[#214F44]/45">
+              <span class="text-[11px] text-theme-primary-text dark:text-slate-400 font-bold opacity-80">合計（${lastCalculation.count} 件）</span>
+              <span class="text-xl font-extrabold text-theme-primary">¥${lastCalculation.total.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const [y, m, d] = dateStr.split('-');
+      return `${m}/${d}`;
+    }
+
+    init();
+  </script>
+</body>
+</html>
